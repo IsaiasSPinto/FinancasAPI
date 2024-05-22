@@ -60,7 +60,7 @@ public class TransactionService : ITransactionService
 
         await _repository.CreateTransactionAsync(transactionEntity);
 
-        await _accountRepository.UpdateAccountBalanceAsync(transactionEntity.AccountId, transactionEntity.Amount, transactionEntity.Type);
+        await _accountRepository.UpdateAccountBalanceAsync(transactionEntity.AccountId, transactionEntity.Amount);
 
         await _unitOfWork.CommitAsync();
 
