@@ -60,7 +60,9 @@ public class TransactionService : ITransactionService
 
         await _repository.CreateTransactionAsync(transactionEntity);
 
-        await _accountRepository.UpdateAccountBalanceAsync(transactionEntity.AccountId, transactionEntity.Amount);
+        var amount = transactionEntity.Type == TransactionType.Income ? transactionEntity.Amount : (transactionEntity.Amount * -1);
+
+        await _accountRepository.UpdateAccountBalanceAsync(transactionEntity.AccountId, amount);
 
         await _unitOfWork.CommitAsync();
 
@@ -78,17 +80,38 @@ public class TransactionService : ITransactionService
             return validationResult.Errors.Select(e => Error.Validation(e.ErrorMessage)).ToList();
         }
 
-        var transactionEntity = _mapper.Map<Transaction>(transaction);
+        var transactionEntity = await _repository.GetTransactionAsync(transaction.Id);
+
+        if (transactionEntity is null)
+        {
+            return Error.NotFound("Transaction not found");
+        }
+
+        var oldAmount = transactionEntity.Type == TransactionType.Income ? (transactionEntity.Amount * -1) : transactionEntity.Amount;
+
+        var updatedTransaction = _mapper.Map(transaction, transactionEntity);
+
         transactionEntity.UserId = 1;
 
-        _repository.UpdateTransactionAsync(transactionEntity);
+        var newAmount = updatedTransaction.Type == TransactionType.Income ? updatedTransaction.Amount : (updatedTransaction.Amount * -1);
+
+        _repository.UpdateTransactionAsync(updatedTransaction);
+        await _accountRepository.UpdateAccountBalanceAsync(transaction.AccountId, oldAmount + newAmount);
+
         await _unitOfWork.CommitAsync();
 
-        return _mapper.Map<TransactionDto>(transactionEntity);
+        return _mapper.Map<TransactionDto>(updatedTransaction);
     }
 
     public async Task<ErrorOr<bool>> DeleteTransactionAsync(int id)
     {
+        var transaction = await _repository.GetTransactionAsync(id);
+
+        //invert the amount to update the account balance
+        var amount = transaction.Type == TransactionType.Income ? (transaction.Amount * -1 ): transaction.Amount;
+
+        await _accountRepository.UpdateAccountBalanceAsync(transaction.AccountId, amount);
+
         await _repository.DeleteTransactionAsync(id);
 
         return await _unitOfWork.CommitAsync() > 0;

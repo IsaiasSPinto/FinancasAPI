@@ -11,6 +11,6 @@ public class CreateTransactionValidator : AbstractValidator<CreateTransactionDto
         RuleFor(t => t.Amount).GreaterThan(0);
         RuleFor(t => t.Description).NotEmpty().NotNull().MaximumLength(20);
         RuleFor(t => t.Date).NotEmpty();
-        RuleFor(t => t.Type).NotEmpty();
+        RuleFor(t => t.Type).IsInEnum();
     }
 }
