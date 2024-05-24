@@ -1,10 +1,12 @@
 ﻿using Finances.Domain;
 
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Finances.Persistence.Data;
 
-public class FinancesContext : DbContext
+public class FinancesContext : IdentityDbContext<User,IdentityRole<int>,int>
 {
     public FinancesContext(DbContextOptions<FinancesContext> options) : base(options)
     {
@@ -16,8 +18,15 @@ public class FinancesContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<User>()
             .HasMany(u => u.Accounts)
+            .WithOne(a => a.User)
+            .HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<User>()
+            .HasMany(u => u.Transactions)
             .WithOne(a => a.User)
             .HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.NoAction);
 

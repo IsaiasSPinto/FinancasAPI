@@ -1,11 +1,9 @@
-﻿namespace Finances.Domain;
+﻿using Microsoft.AspNetCore.Identity;
 
-public class User
+namespace Finances.Domain;
+
+public class User : IdentityUser<int>
 {
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public string Email { get; set; }
     public List<Account> Accounts { get; set; }
-    public int AccountId { get; set; }
     public List<Transaction> Transactions { get; set; }
 }

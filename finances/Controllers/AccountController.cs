@@ -1,11 +1,14 @@
-﻿using Finances.Models.Account;
+﻿using System.Security.Claims;
+
+using Finances.Models.Account;
 using Finances.Services.Contracts;
 
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Finances.Controllers;
 [Route("api/[controller]")]
+[Authorize]
 [ApiController]
 public class AccountController : ControllerBase
 {
@@ -14,7 +17,7 @@ public class AccountController : ControllerBase
     public AccountController(IAccountService accountService)
     {
             _accountService = accountService;
-        }
+    }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetAccount(int id)
@@ -22,14 +25,15 @@ public class AccountController : ControllerBase
         var result = await _accountService.GetAccountByIdAsync(id);
 
         return result.Match<IActionResult>(
-    account => Ok(account),
-    error => NotFound("Account Not Found !")
+            account => Ok(account),
+            error => NotFound("Account Not Found !")
         );
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetUserAccounts([FromQuery] int userId)
+    public async Task<IActionResult> GetUserAccounts()
     {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
         var result = await _accountService.GetAccountsByUserIdAsync(userId);
 
         return Ok(result);
@@ -41,8 +45,8 @@ public class AccountController : ControllerBase
         var result = await _accountService.CreateAccountAsync(createAccountDto);
 
         return result.Match<IActionResult>(
-        account => CreatedAtAction(nameof(GetAccount), new { id = account.Id }, account),
-        errors => BadRequest(errors)
+            account => CreatedAtAction(nameof(GetAccount), new { id = account.Id }, account),
+            errors => BadRequest(errors)
         );
     }
 
@@ -52,8 +56,8 @@ public class AccountController : ControllerBase
         var result = await _accountService.UpdateAccountAsync(updateAccountDto);
 
         return result.Match<IActionResult>(
-        account => Ok(account),
-        errors => BadRequest(errors)
+            account => Ok(account),
+            errors => BadRequest(errors)
         );
     }
 

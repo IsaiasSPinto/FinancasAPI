@@ -1,11 +1,14 @@
-﻿using Finances.Models.Transactions;
-using Finances.Services.Contracts;
+﻿using System.Security.Claims;
 
+using Finances.Models.Transactions;
+using Finances.Services.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Finances.Controllers;
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class TransactionsController : ControllerBase
 {
 
@@ -17,8 +20,9 @@ public class TransactionsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetUserTransactions([FromQuery] int userId)
+    public async Task<IActionResult> GetUserTransactions()
     {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
         var result = await _transactionService.GetAllUserTransactionsAsync(userId);
 
         return Ok(result);
@@ -50,8 +54,8 @@ public class TransactionsController : ControllerBase
         var result = await _transactionService.UpdateTransactionAsync(transaction);
 
         return result.Match<IActionResult>(
-    updatedTransaction => Ok(updatedTransaction),
-    error => BadRequest(error)
+            updatedTransaction => Ok(updatedTransaction),
+            error => BadRequest(error)
         );
     }
 
@@ -61,8 +65,8 @@ public class TransactionsController : ControllerBase
         var result = await _transactionService.DeleteTransactionAsync(id);
 
         return result.MatchFirst<IActionResult>(
-    success => NoContent(),
-error => BadRequest(error)
+            success => NoContent(),
+            error => BadRequest(error)
         );
     }
 
